@@ -1,0 +1,115 @@
+local scriptString = [[
+local player = game.Players.LocalPlayer
+local fov = 70 -- Default FOV
+local silentAimEnabled = true
+
+-- Function to create a ScreenGui with adjustable FOV and enable/disable options
+local function createGui()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Parent = player:WaitForChild("PlayerGui")
+
+    -- Frame for the menu
+    local frame = Instance.new("Frame", screenGui)
+    frame.Size = UDim2.new(0.3, 0, 0.2, 0)
+    frame.Position = UDim2.new(0.35, 0, 0.4, 0)
+    frame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+    frame.BackgroundTransparency = 0.5
+    frame.BorderSizePixel = 0
+
+    -- Text label for the FOV slider
+    local fovLabel = Instance.new("TextLabel", frame)
+    fovLabel.Size = UDim2.new(1, 0, 0.3, 0)
+    fovLabel.Position = UDim2.new(0, 0, 0, 0)
+    fovLabel.Text = "ADJUST FOV from 1 to 500"
+    fovLabel.TextColor3 = Color3.new(1, 1, 1)
+    fovLabel.BackgroundTransparency = 1
+    fovLabel.TextScaled = true
+
+    -- Slider for FOV adjustment
+    local fovSlider = Instance.new("TextBox", frame)
+    fovSlider.Size = UDim2.new(1, 0, 0.3, 0)
+    fovSlider.Position = UDim2.new(0, 0, 0.3, 0)
+    fovSlider.Text = tostring(fov)
+    fovSlider.TextColor3 = Color3.new(1, 1, 1)
+    fovSlider.BackgroundTransparency = 0.5
+    fovSlider.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+    fovSlider.TextScaled = true
+
+    -- Text label for enabling/disabling silent aim
+    local toggleLabel = Instance.new("TextButton", frame)
+    toggleLabel.Size = UDim2.new(1, 0, 0.3, 0)
+    toggleLabel.Position = UDim2.new(0, 0, 0.6, 0)
+    toggleLabel.Text = "Disable Silent Aim"
+    toggleLabel.TextColor3 = Color3.new(1, 1, 1)
+    toggleLabel.BackgroundTransparency = 0.5
+    toggleLabel.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+    toggleLabel.TextScaled = true
+
+    -- Event listener for FOV adjustment
+    fovSlider.FocusLost:Connect(function(enterPressed)
+        if enterPressed then
+            local newFov = tonumber(fovSlider.Text)
+            if newFov and newFov >= 1 and newFov <= 500 then
+                fov = newFov
+                print("FOV adjusted to:", fov)
+            else
+                fovSlider.Text = tostring(fov)
+            end
+        end
+    end)
+
+    -- Event listener for toggling silent aim
+    toggleLabel.MouseButton1Click:Connect(function()
+        silentAimEnabled = not silentAimEnabled
+        toggleLabel.Text = silentAimEnabled and "Disable Silent Aim" or "Enable Silent Aim"
+        print("Silent aim enabled:", silentAimEnabled)
+    end)
+end
+
+-- Function to find the nearest player's head within the FOV
+local function getNearestPlayerHead(player)
+    local closestDistance = math.huge
+    local closestHead = nil
+    for _, otherPlayer in pairs(game.Players:GetPlayers()) do
+        if otherPlayer ~= player and otherPlayer.Character and otherPlayer.Character:FindFirstChild("Head") then
+            local distance = (player.Character.Head.Position - otherPlayer.Character.Head.Position).Magnitude
+            if distance < closestDistance and distance <= fov then
+                closestDistance = distance
+                closestHead = otherPlayer.Character.Head
+            end
+        end
+    end
+    return closestHead
+end
+
+-- Function to enable silent aim
+local function enableSilentAim()
+    local character = player.Character
+    if not character then return end
+
+    -- Create a RemoteEvent to handle shots
+    local remote = Instance.new("RemoteEvent", character)
+    remote.Name = "SilentAim"
+
+    -- Function to adjust the aim
+    remote.OnServerEvent:Connect(function(_, target)
+        if silentAimEnabled then
+            local head = getNearestPlayerHead(player)
+            if not head then return end
+
+            -- Simulate bullet direction to the target's head
+            -- (This is a simplified example; actual implementation may vary)
+            local direction = (head.Position - player.Character.Head.Position).Unit
+            -- Adjust your bullet or projectile direction here
+            print("Aim direction set to: ", direction)
+        end
+    end)
+end
+
+-- Create GUI and enable silent aim
+createGui()
+enableSilentAim()
+]]
+
+-- Execute the script using loadstring
+loadstring(scriptString)()
